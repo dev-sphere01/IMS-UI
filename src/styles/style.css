@@ -1,0 +1,70 @@
+.test-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px;
+    font-size: 13px;
+
+    margin-bottom: 1rem;
+}
+
+.test-header > div {
+    vertical-align: middle;
+    align-content: center;
+}
+
+.test-header button {
+    margin-right: 5px;
+    margin-bottom: 0;
+    margin-top: 0;
+}
+
+.test-header input {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.test-header #floating-rows {
+    vertical-align: bottom;
+}
+.ag-floating-top .ag-row-pinned.ag-row {
+    background-color: #2244cc44;
+}
+
+.ag-floating-bottom .ag-row-pinned.ag-row {
+    background-color: #2244cc44;
+}
+
+
+.btn {
+    background-color: #2563eb; /* blue-600 */
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.3s ease;
+    border: none;
+    cursor: pointer;
+  }
+  .btn:hover {
+    background-color: #1e40af; /* darker blue */
+  }
+  
+/* For fee table*/
+
+  .admission-wrapper {
+    padding: 20px;
+    background-color: #f9f9f9;
+  }
+  
+  .search-bar input {
+    font-size: 16px;
+  }
+  
+  .common-wrapper {
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  }
+  
