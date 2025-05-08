@@ -147,7 +147,21 @@ const FeeForm = () => {
     setSuccess(false);
 
     try {
-      const response = await FeeService.createFee(formData);
+      // Validate required fields
+      if (!formData.feeAmount || !formData.netAmount || !formData.paymentMethod || !formData.transactionId || !formData.paymentDate) {
+        throw new Error('Please fill in all required fields');
+      }
+
+      // Convert string values to numbers where needed
+      const feeDataToSubmit = {
+        ...formData,
+        feeAmount: parseFloat(formData.feeAmount),
+        discountAmount: formData.discountAmount ? parseFloat(formData.discountAmount) : 0,
+        netAmount: parseFloat(formData.netAmount)
+      };
+
+      console.log('Submitting fee data:', feeDataToSubmit);
+      const response = await FeeService.createFee(feeDataToSubmit);
       console.log('Fee submitted successfully:', response);
       setSuccess(true);
 
@@ -179,7 +193,21 @@ const FeeForm = () => {
       // setTimeout(() => navigate('/fees'), 2000);
     } catch (err) {
       console.error('Fee submission error:', err);
-      setError(err.response?.data?.message || 'Failed to submit fee. Please try again.');
+
+      // Extract error message from response if available
+      let errorMessage = 'Failed to submit fee. Please try again.';
+
+      if (err.response && err.response.data) {
+        if (err.response.data.error) {
+          errorMessage = err.response.data.error;
+        } else if (err.response.data.message) {
+          errorMessage = err.response.data.message;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

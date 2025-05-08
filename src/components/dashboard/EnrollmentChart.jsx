@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import { useTheme } from '../../contexts/ThemeContext';
+import StudentService from '../../Services/StudentService';
 
 // Custom tooltip component
 const CustomTooltip = ({ active, payload, label, theme }) => {
@@ -42,7 +43,7 @@ const EnrollmentChart = () => {
   const [activeIndex, setActiveIndex] = useState(null);
 
   // Handle bar hover
-  const handleBarMouseEnter = (data, index) => {
+  const handleBarMouseEnter = (_, index) => {
     setActiveIndex(index);
   };
 
@@ -51,33 +52,78 @@ const EnrollmentChart = () => {
   };
 
   useEffect(() => {
-    // Simulate loading delay with static data
-    const timer = setTimeout(() => {
-      // Get current date to generate more recent data
-      const currentDate = new Date();
-      const currentYear = currentDate.getFullYear();
-      const currentMonth = currentDate.getMonth();
+    const fetchAdmissionData = async () => {
+      try {
+        setLoading(true);
+        const response = await StudentService.getAllStudents();
 
-      // Generate last 6 months of data
-      const months = [];
-      const counts = [24, 28, 19, 32, 36, 42]; // Sample counts
+        if (response && response.success) {
+          // Process the admission data
+          const students = response.data;
 
-      for (let i = 5; i >= 0; i--) {
-        const monthIndex = (currentMonth - i + 12) % 12; // Handle wrapping around to previous year
-        const year = currentMonth - i < 0 ? currentYear - 1 : currentYear;
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          // Get current date to determine the range
+          const currentDate = new Date();
+          const currentYear = currentDate.getFullYear();
+          const currentMonth = currentDate.getMonth();
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-        months.push({
-          month: `${monthNames[monthIndex]} ${year}`,
-          count: counts[5-i]
-        });
+          // Initialize counters for the last 6 months
+          const monthlyData = {};
+
+          // Initialize the last 6 months with zero counts
+          for (let i = 5; i >= 0; i--) {
+            const monthIndex = (currentMonth - i + 12) % 12; // Handle wrapping around to previous year
+            const year = currentMonth - i < 0 ? currentYear - 1 : currentYear;
+            const monthKey = `${monthNames[monthIndex]} ${year}`;
+            monthlyData[monthKey] = 0;
+          }
+
+          // Count admissions by month
+          students.forEach(student => {
+            if (student.timestamp) {
+              const admissionDate = new Date(student.timestamp);
+              const admissionMonth = admissionDate.getMonth();
+              const admissionYear = admissionDate.getFullYear();
+              const monthKey = `${monthNames[admissionMonth]} ${admissionYear}`;
+
+              // Only count if it's within the last 6 months
+              if (monthlyData.hasOwnProperty(monthKey)) {
+                monthlyData[monthKey]++;
+              }
+            }
+          });
+
+          // Convert to array format for the chart
+          const chartDataArray = Object.entries(monthlyData).map(([month, count]) => ({
+            month,
+            count
+          }));
+
+          // Sort by date (oldest to newest)
+          chartDataArray.sort((a, b) => {
+            const [aMonth, aYear] = a.month.split(' ');
+            const [bMonth, bYear] = b.month.split(' ');
+
+            if (aYear !== bYear) {
+              return parseInt(aYear) - parseInt(bYear);
+            }
+
+            return monthNames.indexOf(aMonth) - monthNames.indexOf(bMonth);
+          });
+
+          setChartData(chartDataArray);
+        } else {
+          setError('Failed to fetch admission data');
+        }
+      } catch (err) {
+        console.error('Error fetching admission data:', err);
+        setError('Error fetching admission data');
+      } finally {
+        setLoading(false);
       }
+    };
 
-      setChartData(months);
-      setLoading(false);
-    }, 1200);
-
-    return () => clearTimeout(timer);
+    fetchAdmissionData();
   }, []);
 
   if (loading) {
@@ -102,7 +148,7 @@ const EnrollmentChart = () => {
 
   return (
     <div className={`${theme.colors.background.card} rounded-xl shadow-md p-4 border ${theme.colors.border.light}`}>
-      <h3 className={`text-lg font-semibold mb-4 ${theme.colors.text.primary}`}>Student Enrollment Trends</h3>
+      <h3 className={`text-lg font-semibold mb-4 ${theme.colors.text.primary}`}>Monthly Admission Trends</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
@@ -136,14 +182,14 @@ const EnrollmentChart = () => {
             />
             <Bar
               dataKey="count"
-              name="Students Enrolled"
+              name="Student Admissions"
               radius={[4, 4, 0, 0]}
               barSize={30}
               animationDuration={1500}
               onMouseEnter={handleBarMouseEnter}
               onMouseLeave={handleBarMouseLeave}
             >
-              {chartData.map((entry, index) => (
+              {chartData.map((_, index) => (
                 <Cell
                   key={`cell-${index}`}
                   fill={activeIndex === index ? gradientColors.start : "url(#enrollmentGradient)"}

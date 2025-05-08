@@ -169,10 +169,10 @@ const Home = () => {
         ]);
 
         // Process results safely
-        const students = studentsData.status === 'fulfilled' ? studentsData.value : [];
-        const enquiries = enquiriesData.status === 'fulfilled' ? enquiriesData.value : [];
-        const fees = feesData.status === 'fulfilled' ? feesData.value : [];
-        const courses = coursesData.status === 'fulfilled' ? coursesData.value : [];
+        const students = studentsData.status === 'fulfilled' ? (studentsData.value.data || []) : [];
+        const enquiries = enquiriesData.status === 'fulfilled' ? (enquiriesData.value.data || []) : [];
+        const fees = feesData.status === 'fulfilled' ? (feesData.value.data || []) : [];
+        const courses = coursesData.status === 'fulfilled' ? (coursesData.value.data || []) : [];
 
         // Calculate statistics
         const pendingEnquiries = Array.isArray(enquiries)
@@ -253,7 +253,15 @@ const Home = () => {
       </div>
 
       {/* Statistics Cards */}
-      <StatisticsCards />
+      <StatisticsCards
+        stats={{
+          totalStudents: featureCounts.totalStudents,
+          pendingEnquiries: featureCounts.pendingEnquiries,
+          totalFees: featureCounts.pendingFees * 5000, // Estimate total fees based on pending fees
+          courses: featureCounts.courses
+        }}
+        isLoading={featureCounts.loading}
+      />
 
       {/* Main Dashboard Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

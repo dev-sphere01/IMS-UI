@@ -5,7 +5,7 @@ const FeeService = {
   // Get all fees
   getAllFees: async () => {
     try {
-      const response = await API.get('/fee/all');
+      const response = await API.get('/fee');
       return response.data;
     } catch (error) {
       throw error;
@@ -35,7 +35,7 @@ const FeeService = {
   // Create new fee record
   createFee: async (feeData) => {
     try {
-      const response = await API.post('/fee/create', feeData);
+      const response = await API.post('/fee', feeData);
       return response.data;
     } catch (error) {
       throw error;
