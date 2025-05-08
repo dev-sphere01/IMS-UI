@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaUserGraduate, FaClipboardList, FaMoneyBillWave, FaBookOpen } from 'react-icons/fa';
 import { animate } from 'framer-motion';
 import { useTheme } from '../../contexts/ThemeContext';
+import PropTypes from 'prop-types';
 
 // Format numbers in K (thousands) or M (millions)
 const formatNumber = (value) => {
@@ -14,13 +15,13 @@ const formatNumber = (value) => {
   }
 };
 
-const StatisticsCards = () => {
+const StatisticsCards = ({
+  stats = {},
+  isLoading = false,
+  error = null
+}) => {
   // Get theme context
   const { theme } = useTheme();
-
-  // State for loading and error
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   // State for animated values
   const [totalStudents, setTotalStudents] = useState(0);
@@ -29,34 +30,30 @@ const StatisticsCards = () => {
   const [courses, setCourses] = useState(0);
 
   useEffect(() => {
-    // Simulate loading delay
-    const timer = setTimeout(() => {
-      setLoading(false);
-
-      // Animate the counters
-      animate(0, 245, {
+    // Only animate if we have real data and not loading
+    if (!isLoading && stats) {
+      // Animate the counters from current value to new value
+      animate(totalStudents, stats.totalStudents || 0, {
         duration: 0.5,
         onUpdate: (value) => setTotalStudents(Math.round(value))
       });
 
-      animate(0, 18, {
+      animate(pendingEnquiries, stats.pendingEnquiries || 0, {
         duration: 0.5,
         onUpdate: (value) => setPendingEnquiries(Math.round(value))
       });
 
-      animate(0, 1250000, {
+      animate(totalFees, stats.totalFees || 0, {
         duration: 0.5,
         onUpdate: (value) => setTotalFees(Math.round(value))
       });
 
-      animate(0, 12, {
+      animate(courses, stats.courses || 0, {
         duration: 0.5,
         onUpdate: (value) => setCourses(Math.round(value))
       });
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, []);
+    }
+  }, [stats, isLoading, totalStudents, pendingEnquiries, totalFees, courses]);
 
   const statCards = [
     {
@@ -89,7 +86,7 @@ const StatisticsCards = () => {
     }
   ];
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[1, 2, 3, 4].map(i => (
@@ -112,24 +109,35 @@ const StatisticsCards = () => {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      {statCards.map((card, index) => (
-        <div
-          key={index}
-          className={`${card.bgColor} rounded-xl shadow-md p-4 transition-transform duration-300 transform hover:-translate-y-1 hover:shadow-lg`}
-        >
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-sm font-medium text-gray-600">{card.title}</h3>
-              <p className={`text-2xl font-bold ${card.textColor}`}>{card.value}</p>
-            </div>
-            <div className="p-3 rounded-full bg-white bg-opacity-50">
-              {card.icon}
+        {statCards.map((card, index) => (
+          <div
+            key={index}
+            className={`${card.bgColor} rounded-xl shadow-md p-4 transition-transform duration-300 transform hover:-translate-y-1 hover:shadow-lg`}
+          >
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-sm font-medium text-gray-600">{card.title}</h3>
+                <p className={`text-2xl font-bold ${card.textColor}`}>{card.value}</p>
+              </div>
+              <div className="p-3 rounded-full bg-white bg-opacity-50">
+                {card.icon}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
   );
+};
+
+StatisticsCards.propTypes = {
+  stats: PropTypes.shape({
+    totalStudents: PropTypes.number,
+    pendingEnquiries: PropTypes.number,
+    totalFees: PropTypes.number,
+    courses: PropTypes.number
+  }),
+  isLoading: PropTypes.bool,
+  error: PropTypes.string
 };
 
 export default StatisticsCards;

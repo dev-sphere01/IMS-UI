@@ -22,51 +22,57 @@ const RecentActivity = () => {
         ]);
 
         // Process enquiries
-        const enquiries = enquiriesData.status === 'fulfilled'
-          ? (Array.isArray(enquiriesData.value) ? enquiriesData.value : [])
-            .map(item => ({
-              id: item._id,
-              type: 'enquiry',
-              icon: <FaClipboardCheck className="text-yellow-500" />,
-              title: `New Enquiry: ${item.name || 'Unknown'}`,
-              description: `Enquiry for ${item.course || 'course'}`,
-              date: new Date(item.createdAt || Date.now()),
-              status: item.status || 'pending'
-            }))
-          : [];
+        const enquiriesResponse = enquiriesData.status === 'fulfilled' ? enquiriesData.value : { success: false, data: [] };
+        const enquiries = (enquiriesResponse.success && Array.isArray(enquiriesResponse.data) ? enquiriesResponse.data : [])
+          .map(item => ({
+            id: item._id,
+            type: 'enquiry',
+            icon: <FaClipboardCheck className="text-yellow-500" />,
+            title: `New Enquiry: ${item.fullName || 'Unknown'}`,
+            description: `Enquiry for ${item._interestedCourse || item.interestedCourse || 'course'}`,
+            date: new Date(item.createdAt || Date.now()),
+            status: item.status || 'pending'
+          }));
 
-        // Process students
-        const students = studentsData.status === 'fulfilled'
-          ? (Array.isArray(studentsData.value) ? studentsData.value : [])
-            .map(item => ({
-              id: item._id,
-              type: 'admission',
-              icon: <FaUserPlus className="text-blue-500" />,
-              title: `New Admission: ${item.name || 'Unknown'}`,
-              description: `Admitted to ${item.course || 'course'}`,
-              date: new Date(item.admissionDate || item.createdAt || Date.now()),
-              status: 'completed'
-            }))
-          : [];
+        // Process students (admissions)
+        const studentsResponse = studentsData.status === 'fulfilled' ? studentsData.value : { success: false, data: [] };
+        const students = (studentsResponse.success && Array.isArray(studentsResponse.data) ? studentsResponse.data : [])
+          .map(item => ({
+            id: item._id,
+            type: 'admission',
+            icon: <FaUserPlus className="text-blue-500" />,
+            title: `New Admission: ${item.fullName || 'Unknown'}`,
+            description: `Admitted to ${item.courseApplied || 'course'}`,
+            date: new Date(item.timestamp || item.createdAt || Date.now()),
+            status: item.status || 'completed'
+          }));
 
         // Process fees
-        const fees = feesData.status === 'fulfilled'
-          ? (Array.isArray(feesData.value) ? feesData.value : [])
-            .map(item => ({
-              id: item._id,
-              type: 'payment',
-              icon: <FaMoneyBillWave className="text-green-500" />,
-              title: `Fee Payment: ${item.studentName || 'Unknown'}`,
-              description: `₹${item.amount || 0} paid for ${item.feeType || 'fees'}`,
-              date: new Date(item.paymentDate || item.createdAt || Date.now()),
-              status: 'completed'
-            }))
-          : [];
+        const feesResponse = feesData.status === 'fulfilled' ? feesData.value : { success: false, data: [] };
+        const fees = (feesResponse.success && Array.isArray(feesResponse.data) ? feesResponse.data : [])
+          .map(item => ({
+            id: item._id,
+            type: 'payment',
+            icon: <FaMoneyBillWave className="text-green-500" />,
+            title: `Fee Payment: ${item.studentName || 'Unknown'}`,
+            description: `₹${item.amount || 0} paid for ${item.feeType || 'fees'}`,
+            date: new Date(item.paymentDate || item.createdAt || Date.now()),
+            status: item.status || 'completed'
+          }));
+
+        // Log the processed data for debugging
+        console.log('Processed data for Recent Activity:', {
+          enquiries: enquiries.length,
+          students: students.length,
+          fees: fees.length
+        });
 
         // Combine all activities
         const allActivities = [...enquiries, ...students, ...fees]
           .sort((a, b) => b.date - a.date) // Sort by date (newest first)
           .slice(0, 5); // Get only the 5 most recent
+
+        console.log('Final activities for display:', allActivities);
 
         setActivities(allActivities);
       } catch (err) {
@@ -80,9 +86,11 @@ const RecentActivity = () => {
     fetchActivities();
   }, []);
 
-  // If no real data is available, use sample data
+  // Only use sample data if explicitly requested (disabled by default)
+  const useSampleData = false; // Set to true to use sample data when no real data is available
+
   useEffect(() => {
-    if (!loading && activities.length === 0 && !error) {
+    if (useSampleData && !loading && activities.length === 0 && !error) {
       // Sample data
       const sampleActivities = [
         {
@@ -133,7 +141,7 @@ const RecentActivity = () => {
       ];
       setActivities(sampleActivities);
     }
-  }, [loading, activities, error]);
+  }, [loading, activities, error, useSampleData]);
 
   const formatDate = (date) => {
     const now = new Date();
@@ -182,36 +190,51 @@ const RecentActivity = () => {
   return (
     <div className={`${theme.colors.background.card} rounded-xl shadow-md p-4 border ${theme.colors.border.light}`}>
       <h3 className={`text-lg font-semibold mb-4 ${theme.colors.text.primary}`}>Recent Activity</h3>
-      <div className="space-y-3">
-        {activities.map((activity) => (
-          <div
-            key={activity.id}
-            className={`flex items-start gap-3 pb-3 border-b ${theme.isDark ? 'border-gray-700' : 'border-gray-100'} last:border-0`}
-          >
-            <div className={`p-2 rounded-full ${theme.isDark ? 'bg-gray-700' : 'bg-gray-100'} mt-1`}>
-              {activity.icon}
-            </div>
-            <div className="flex-1">
-              <div className="flex justify-between">
-                <h4 className={`font-medium ${theme.isDark ? 'text-white' : 'text-gray-800'}`}>{activity.title}</h4>
-                <span className={`text-xs ${theme.isDark ? 'text-gray-400' : 'text-gray-500'}`}>{formatDate(activity.date)}</span>
-              </div>
-              <p className={`text-sm ${theme.isDark ? 'text-gray-300' : 'text-gray-600'}`}>{activity.description}</p>
-              <div className="mt-1">
-                <span
-                  className={`text-xs px-2 py-1 rounded-full ${
-                    activity.status === 'pending'
-                      ? theme.isDark ? 'bg-yellow-900 bg-opacity-50 text-yellow-200' : 'bg-yellow-100 text-yellow-800'
-                      : theme.isDark ? 'bg-green-900 bg-opacity-50 text-green-200' : 'bg-green-100 text-green-800'
-                  }`}
-                >
-                  {activity.status}
-                </span>
-              </div>
-            </div>
+
+      {activities.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-6">
+          <div className={`p-3 rounded-full ${theme.isDark ? 'bg-gray-700' : 'bg-gray-100'} mb-3`}>
+            <FaClipboardCheck className={`text-xl ${theme.isDark ? 'text-gray-400' : 'text-gray-500'}`} />
           </div>
-        ))}
-      </div>
+          <p className={`text-center ${theme.isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+            No recent activities to display
+          </p>
+          <p className={`text-center text-sm mt-1 ${theme.isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+            New admissions and enquiries will appear here
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {activities.map((activity) => (
+            <div
+              key={activity.id}
+              className={`flex items-start gap-3 pb-3 border-b ${theme.isDark ? 'border-gray-700' : 'border-gray-100'} last:border-0`}
+            >
+              <div className={`p-2 rounded-full ${theme.isDark ? 'bg-gray-700' : 'bg-gray-100'} mt-1`}>
+                {activity.icon}
+              </div>
+              <div className="flex-1">
+                <div className="flex justify-between">
+                  <h4 className={`font-medium ${theme.isDark ? 'text-white' : 'text-gray-800'}`}>{activity.title}</h4>
+                  <span className={`text-xs ${theme.isDark ? 'text-gray-400' : 'text-gray-500'}`}>{formatDate(activity.date)}</span>
+                </div>
+                <p className={`text-sm ${theme.isDark ? 'text-gray-300' : 'text-gray-600'}`}>{activity.description}</p>
+                <div className="mt-1">
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${
+                      activity.status === 'pending'
+                        ? theme.isDark ? 'bg-yellow-900 bg-opacity-50 text-yellow-200' : 'bg-yellow-100 text-yellow-800'
+                        : theme.isDark ? 'bg-green-900 bg-opacity-50 text-green-200' : 'bg-green-100 text-green-800'
+                    }`}
+                  >
+                    {activity.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
